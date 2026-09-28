@@ -1,18 +1,18 @@
-from fastapi import HTTPException, APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
 
+from fastapi import HTTPException, APIRouter, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 from api.database import get_db
 from api import models
-
-from api.schemas import TransactionCreate, TransactionResponse
+from api.schemas import TransactionCreate, TransactionAccepted
 
 router = APIRouter(
     prefix="/transactions",
     tags=["transactions"]
 )
 
-@router.post("/", response_model=TransactionResponse)
-async def create_transaction(transaction_data: TransactionCreate, db: AsyncSession = Depends(get_db)):
+@router.post("/", response_model=TransactionAccepted)
+async def create_transaction(transaction_data: TransactionCreate, request: Request, db: AsyncSession = Depends(get_db)):
 
     existing_payer = await db.get(models.Payer, transaction_data.payer_id)
     existing_merchant = await db.get(models.Merchant, transaction_data.merchant_id)
@@ -23,10 +23,26 @@ async def create_transaction(transaction_data: TransactionCreate, db: AsyncSessi
     if existing_merchant is None:
         raise HTTPException(status_code=404, detail="Merchant not found")
 
+    generate_id = uuid.uuid4()
 
-    new_transaction = models.Transaction(payer_id=existing_payer.id, merchant_id=existing_merchant.id, amount=transaction_data.amount, currency=transaction_data.currency)
-    db.add(new_transaction)
-    await db.commit()
-    await db.refresh(new_transaction)
+    new_transaction = {
+        "id": generate_id,
+        "payer_id": transaction_data.payer_id,
+        "merchant_id": transaction_data.merchant_id,
+        "amount": transaction_data.amount,
+        "currency": transaction_data.currency,
+    }
 
-    return new_transaction
+    await request.app.state.kafka_producer.send_and_wait(
+        "transactions_raw",
+        new_transaction
+    )
+
+    response = {
+        "id": generate_id,
+        "status": "ACCEPTED"
+    }
+
+    return response
+
+

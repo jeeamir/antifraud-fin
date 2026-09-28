@@ -54,9 +54,9 @@ class TransactionResponse(BaseModel):
     is_fraud: Optional[bool] = None
 
 
-
-
-
+class TransactionAccepted(BaseModel):
+    id: UUID
+    status: str
 
 
 
