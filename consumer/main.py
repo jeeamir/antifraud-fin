@@ -6,6 +6,8 @@ import json
 from decimal import Decimal
 from uuid import UUID
 from api.database import SessionLocal
+from consumer.scoring import is_fraud_by_rules
+from api.models import TransactionStatus
 
 
 async def save_transaction(transaction_data):
@@ -20,13 +22,17 @@ async def save_transaction(transaction_data):
         if existing_transaction is not None:
             return False
 
+        amount = Decimal(transaction_data["amount"])
+        is_fraud = is_fraud_by_rules(amount)
 
         transaction = models.Transaction(
             id=transaction_id,
             payer_id=UUID(transaction_data["payer_id"]),
             merchant_id=UUID(transaction_data["merchant_id"]),
-            amount=Decimal(transaction_data["amount"]),
+            amount=amount,
             currency=transaction_data["currency"],
+            status=TransactionStatus.SCORED,
+            is_fraud=is_fraud
         )
 
         db.add(transaction)
