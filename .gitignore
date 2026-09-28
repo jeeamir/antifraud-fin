@@ -15,6 +15,7 @@ ENV/
 .env
 .env.*
 !.env.example
+api/.env
 
 # --- Alembic (keep migrations, ignore local cache if any) ---
 # alembic/versions/*.pyc is already covered by __pycache__ above

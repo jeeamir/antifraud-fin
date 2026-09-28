@@ -2,7 +2,6 @@ from fastapi import HTTPException
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from api.database import get_db
 from api.schemas import MerchantCreate, MerchantResponse
 from api import models
