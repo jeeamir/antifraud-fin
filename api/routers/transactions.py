@@ -1,10 +1,10 @@
 import uuid
-
+from uuid import UUID
 from fastapi import HTTPException, APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from api.database import get_db
 from api import models
-from api.schemas import TransactionCreate, TransactionAccepted
+from api.schemas import TransactionCreate, TransactionAccepted, TransactionResponse
 
 router = APIRouter(
     prefix="/transactions",
@@ -44,5 +44,16 @@ async def create_transaction(transaction_data: TransactionCreate, request: Reque
     }
 
     return response
+
+
+@router.get("/{transaction_id}", response_model=TransactionResponse)
+async def get_transaction_by_id(transaction_id: UUID, db: AsyncSession = Depends(get_db)):
+    transaction = await db.get(models.Transaction, transaction_id)
+
+    if transaction is None:
+        raise HTTPException(status_code=404, detail="Transaction is not found")
+
+    return transaction
+
 
 
