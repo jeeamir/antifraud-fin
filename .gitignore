@@ -17,6 +17,8 @@ ENV/
 !.env.example
 api/.env
 
+
+data/raw/creditcard.csv
 # --- Alembic (keep migrations, ignore local cache if any) ---
 # alembic/versions/*.pyc is already covered by __pycache__ above
 
